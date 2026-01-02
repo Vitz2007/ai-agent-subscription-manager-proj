@@ -1,0 +1,12 @@
+{
+  "user_123": {
+    "name": "Alice",
+    "plan": "VIP",
+    "status": "Cancelled"
+  },
+  "user_456": {
+    "name": "Bob",
+    "plan": "Basic",
+    "status": "Active"
+  }
+}
