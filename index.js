@@ -9,14 +9,11 @@ const readline = require('readline').createInterface({
   output: process.stdout
 });
 
-// Mock Database
-const mockDatabase = {
-  "user_123": { name: "Alice", plan: "VIP", status: "Active" },
-  "user_456": { name: "Bob", plan: "Basic", status: "Active" }
-};
-
 // Javascript tools updated to load data from file
 function loadData() {
+  if (!fs.existsSync('database.json')) {
+    // Create file if it ddoesn't exist
+    fs.writeFileSync('database.json', JSON.stringify())  }
   const data = fs.readFileSync('database.json');
   return JSON.parse(data);
 }
