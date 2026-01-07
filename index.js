@@ -2,6 +2,7 @@
 const fs = require('fs')
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { type } = require('os');
 
 // Add 'readline' to have dynamic input
 const readline = require('readline').createInterface({
@@ -13,7 +14,7 @@ const readline = require('readline').createInterface({
 function loadData() {
   if (!fs.existsSync('database.json')) {
     // Create file if it ddoesn't exist
-    fs.writeFileSync('database.json', JSON.stringify())  }
+    fs.writeFileSync('database.json', JSON.stringify({}))  }
   const data = fs.readFileSync('database.json');
   return JSON.parse(data);
 }
@@ -41,10 +42,36 @@ function cancelSubscription(args) {
     db[userId].status = "Cancelled";
     saveData(db);
    
-  console.log(`\n[SYSTEM] DATABASe UPDATED: ${userdId} is now Cancelled.`);
+  console.log(`\n[SYSTEM] DATABASE UPDATED: ${userdId} is now Cancelled.`);
   return { success: true, message: `Successfully cancelled ${subscriptionId}.` };
 }
   return { error: "User not found." };
+}
+
+// Add search functionality 
+async function searchWeb(args) {
+  const query = args.query;
+  console.log(`\n[SYSTEM] Searching the web for "${query}"...`);
+
+  try {
+    const response = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+    headers: {
+      'X-API-KEY': process.env.SERPER_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ q: query })
+  });
+
+const data = await response.json();
+
+// Resturn top 3 results to narrow down info and keep AI focused
+const searchResults = data.organic ? data.organic.slice(0, 3) : [];
+return { results: searchResults };
+  } catch (error) {
+    console.error(error);
+    return { error: "Failed to connect to search engine." };
+  }
 }
 
 // Schemas
@@ -75,19 +102,32 @@ const cancelSubscriptionDeclaration = {
   }
 };
 
+//Add search schema
+const searchWebTool = {
+  name: "searchWeb",
+  description: "Search Google for information in real-time on competitors or news.",
+parameters: {
+  type: "OBJECT",
+  properties: {
+    query: { type: "STRING", description: "The search keywords or phrases."}
+  },
+  required: ["query"]
+  }
+};
+
 // Tap into Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel(
   { 
     model: "gemini-3-flash-preview",
     tools: [{
-        functionDeclarations: [ getUserInfoTool, cancelSubscriptionDeclaration ]
-    }],
+        functionDeclarations: [ getUserInfoTool, cancelSubscriptionDeclaration, searchWebTool ]
+    }], // Add searchWebTool here
   }, 
   { apiVersion: "v1beta" }
 );
 
-// Update main loop to chatbot framework for user conservations
+// Update main loop to chatbot framework for user conversations
 async function chatloop() {
   console.log("\n-- AI AGENT ONLINE (Type 'exit' to quit session) --");
   const chat = model.startChat();
@@ -112,6 +152,9 @@ async function chatloop() {
 
           if (toolName === "getUserInfo") toolResult = getUserInfo(toolArgs.userId);
           if (toolName === "cancelSubscription") toolResult = cancelSubscription(toolArgs);
+
+          // Logic for searchWeb
+          if (toolName === "searchWeb") toolResult = await searchWeb(toolArgs);
 
           const finalResult = await chat.sendMessage([{
             functionResponse: { name: toolName, response: toolResult }
