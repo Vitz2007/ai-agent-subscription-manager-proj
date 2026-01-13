@@ -10,6 +10,19 @@ const readline = require('readline').createInterface({
   output: process.stdout
 });
 
+/// Restrict searches for safety
+const MAX_LOOPS = 5;
+const AUDIT_LOG_PATH = 'agent_audit_log.jsonl';
+
+/// Audit Logging of decisions, actions, changes, and results to file
+function logEvent (type, content) {
+  const timestamp = new Date().toISOString();
+  const logEntry = JSON.stringify({ timestamp, type, content });
+
+// Append to log file
+fs.appendFileSync(AUDIT_LOG_PATH, logEntry + '\n');
+}
+
 // Javascript tools updated to load data from file
 function loadData() {
   if (!fs.existsSync('database.json')) {
@@ -27,22 +40,27 @@ fs.writeFileSync('database.json', JSON.stringify(data, null, 2));
 // Update getUserInfo to get data from file
 function getUserInfo(userId) {
   const db = loadData();
-  console.log(`\n[SYSTEM] Agent is running getUserInfo for: ${userId}...`);
+  console.log(`\n[SYSTEM] Agent is getting data for: ${userId}...`);
   return db[userId] || { error: "User not found" };
 }
 
 function cancelSubscription(args) {
   const { userId, subscriptionId, reason, confirmCancel } = args;
-  
-  if (!confirmCancel) 
+  logEvent('TOOL EXECUTION', 'Attempting to cancel subscription for  ${userId}');
+
+  if (!confirmCancel) {
+    logEvent('SECURITY BLOCK', 'Cancellation attempted without confirmation for ${userId}');
     return { error: "Cancellation aborted. Confirmation required." };
-   
+  }
+
   const db = loadData(); 
    if (db[userId]) {
     db[userId].status = "Cancelled";
     saveData(db);
-   
-  console.log(`\n[SYSTEM] DATABASE UPDATED: ${userdId} is now Cancelled.`);
+    logEvent('SUCCESS', 'Subscription ${subscriptionId} cancelled');
+
+   console.log(`\n[SYSTEM] DATABASE UPDATED: ${userId} is now Cancelled.`);
+
   return { success: true, message: `Successfully cancelled ${subscriptionId}.` };
 }
   return { error: "User not found." };
@@ -51,6 +69,7 @@ function cancelSubscription(args) {
 // Add search functionality 
 async function searchWeb(args) {
   const query = args.query;
+  logEvent('TOOL EXECUTION', `Looking up web search for query: ${query}`);
   console.log(`\n[SYSTEM] Searching the web for "${query}"...`);
 
   try {
@@ -66,8 +85,9 @@ async function searchWeb(args) {
 const data = await response.json();
 
 // Resturn top 3 results to narrow down info and keep AI focused
-const searchResults = data.organic ? data.organic.slice(0, 3) : [];
-return { results: searchResults };
+const results = data.organic ? data.organic.slice(0, 3) : [];
+logEvent('TOOL RESULT', `Retrieved ${results.length} results`);
+return { results };
   } catch (error) {
     console.error(error);
     return { error: "Failed to connect to search engine." };
@@ -129,23 +149,35 @@ const model = genAI.getGenerativeModel(
 
 // Update main loop to chatbot framework for user conversations
 async function chatloop() {
-  console.log("\n-- AI AGENT ONLINE (Type 'exit' to quit session) --");
+  console.log("\n-- AI AGENT ONLINE (Audit Logging Enabled. Type 'exit' to quit session) --");
   const chat = model.startChat();
-  // Not needed = const userPrompt = "I am user_123. I want to cancel my VIP plan because it is too expensive. I am 100% sure.";
-  // Also not needed = console.log(`USER: ${userPrompt}`);
+  logEvent('SYSTEM', 'AI Agent session started');
 
   const askQuestion = () => {
     readline.question('\nYOU: ', async (userInput) => {
       if (userInput.toLowerCase() === 'exit') {
+        logEvent('SYSTEM', 'User exited the session');
         readline.close();
         return;
       }
+
       try {
-        const result = await chat.sendMessage(userInput);
+        logEvent('USER INPUT', userInput);
+        let result = await chat.sendMessage(userInput);
         let response = result.response;
         let call = response.functionCalls()?.[0];
 
+        // Limit loops to avoid infiinite cycles
+        let loopCount = 0;
+
         while (call) {
+          if (loopCount >= MAX_LOOPS) {
+            console.log("EMERGENCY STOP: Maximum execution loops reached.");
+          logEvent('Critical', 'Maximum execution loops reached, stop further actions stopped.');
+          break;
+          }
+          loopCount++;
+          
           const toolName = call.name;
           const toolArgs = call.args;
           let toolResult;
