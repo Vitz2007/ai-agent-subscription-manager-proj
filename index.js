@@ -14,10 +14,25 @@ const readline = require('readline').createInterface({
 const MAX_LOOPS = 5;
 const AUDIT_LOG_PATH = 'agent_audit_log.jsonl';
 
+/// Detect and redact personally identifiable information (PII)
+function redactPII(text) {
+  if (typeof text !== 'string') return text;
+  // Simplified PII redaction of emails and phone numbers
+  const emailRegex = /[a-zA-Z0-9,._%+-]+@[a-zA-Z0-9,.-]+\.[a-zA-Z]{2,}/g;
+const phoneRegex = /\b\d{3}[-,.\s]??\d{3}[-,\s.]??\d{4}\b/g;
+return text.replace(emailRegex, '[REDACTED EMAIL]').replace(phoneRegex, '[REDACTED PHONE]');
+}
+
 /// Audit Logging of decisions, actions, changes, and results to file
 function logEvent (type, content) {
   const timestamp = new Date().toISOString();
-  const logEntry = JSON.stringify({ timestamp, type, content });
+
+  /// Cleaning data for PII before saving
+  // If content is an object, turn to string for redaction
+  const contentString = typeof content === 'object' ? JSON.stringify(content) : content;
+  const safeContent = redactPII(contentString);
+
+  const logEntry = JSON.stringify({ timestamp, type, content: safeContent });
 
 // Append to log file
 fs.appendFileSync(AUDIT_LOG_PATH, logEntry + '\n');
