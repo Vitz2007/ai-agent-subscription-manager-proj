@@ -20,6 +20,10 @@ The AI Agent is designed to be your simple customer support rep that can look up
 - Knowledge - Serper.dev API for Google Seach Results.
 - Memory - (fs) Local file system for persistent JSON data.
 - Interface - (CLI) Command line with a persistent chat loop.
+- * Operations Dashboard running in real-time - built a Full-Stack Admin Console to visualize AI agent performance. Also it tracks live metrics - ie: total interactions, error rates, and sentiment trends in real-time.
+- * Privacy and Governance (GDPR Compliance) - Implemented a PII Redaction Middleware. It also auto detecs and cleans emails/phone numbers from logs before being put onto the disk.
+- * Sentiment Analysis Pipeline - A second Gemini model analyzes every user message asynchronously. Additionally, user intent is classified ie: positive, negative, or neutral to track customer satisfaction.
+- * Safety - Placed limits to prevent infinite calling loops, protecting API quotas, and managing costs.
 
 ### Audit Logging System
 
