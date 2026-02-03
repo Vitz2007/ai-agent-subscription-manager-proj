@@ -2,7 +2,7 @@
 const fs = require('fs');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Added 'readline' for dynamic input
+// Add 'readline' for dynamic input
 const readline = require('readline').createInterface({
   input: process.stdin,
   output: process.stdout
@@ -12,7 +12,7 @@ const readline = require('readline').createInterface({
 const MAX_LOOPS = 5;
 const AUDIT_LOG_PATH = 'agent_audit_log.jsonl';
 
-// Load Gemini API Key
+// Load in Gemini API Key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Integrate Personally Indentifiable Information (PII) Redaction into system
@@ -60,7 +60,7 @@ async function analyzeSentiment(text) {
   }
 }
 
-// Database helpers
+// Database helper functions
 function loadData() {
   if (!fs.existsSync('database.json')) {
     fs.writeFileSync('database.json', JSON.stringify({}));
@@ -176,7 +176,7 @@ const model = genAI.getGenerativeModel(
   { apiVersion: "v1beta" }
 );
 
-// Main chat loop
+// The main chat loop
 async function chatloop() {
   console.log("\n-- AI AGENT ONLINE (Audit Logging & Sentiment Analysis Enabled 🔴) --");
   const chat = model.startChat();

@@ -7,7 +7,7 @@ const LOG_FILE = 'agent_audit_log.jsonl';
 app.use(express.static('public'));
 
 app.get('/api/stats', (req, res) => {
-    // Handle case where log file does not exist
+    // Handle case where log file doesn't exist yet
     if (!fs.existsSync(LOG_FILE)) {
         return res.json({ 
             logs: [], 
@@ -25,7 +25,7 @@ app.get('/api/stats', (req, res) => {
         catch (e) { return null; }
     }).filter(entry => entry !== null);
 
-    // Define 'sentiments' and calculate score
+    // Define 'sentiments' and calculate the score
     const sentiments = logs.filter(l => l.type === 'ANALYTICS_SENTIMENT');
     const positive = sentiments.filter(l => l.content === 'POSITIVE').length;
     const negative = sentiments.filter(l => l.content === 'NEGATIVE').length;

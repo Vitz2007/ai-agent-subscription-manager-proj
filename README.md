@@ -60,4 +60,4 @@ Let's start with this prompt -
 You'll see the AI Agent go through: Lookup, Cancel, Search, and Summarize.
 
 ### Why Agentic AI Agent
-I built this to get familiar with "Function Calling" capabilities of Gemini 3.0. I believe AI holds a lot more than just generating text and can truly be an agent that interacts naturally with the user through APIs and databases to solve user's real-world problems.
+I built this to get familiar with "Function Calling" capabilities of Gemini 3.0. I believe AI holds a lot more than just generating text and images for everyday use. It can truly be an agent that interacts naturally with the user through APIs and databases to solve user's real-world problems in various areas.

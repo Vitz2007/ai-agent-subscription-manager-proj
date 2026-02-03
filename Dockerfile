@@ -1,7 +1,7 @@
-# Use a lightweight Node.js version
+# Use a lightweight version of Node.js
 FROM node:20-alpine
 
-# Create a directory inside the container
+# Make a directory inside the container
 WORKDIR /app
 
 # Copy package files first for better caching
